@@ -1,73 +1,208 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:animateLayoutChanges="true"
-    android:padding="@dimen/doub_grid_size"
-    tools:context=".MainActivity">
+    android:background="@color/bg_dark"
+    android:padding="12dp">
 
-    <TextView
-        android:id="@+id/title"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/title"
-        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-        app:layout_constraintBottom_toTopOf="@id/description"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/description"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginVertical="@dimen/base_grid_size"
-        android:text="@string/description"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        app:layout_constraintBottom_toTopOf="@id/edit_text_factorial"
-        app:layout_constraintStart_toStartOf="parent" />
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/surface_dark"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical">
 
-    <EditText
-        android:id="@+id/edit_text_factorial"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/factorial_hint"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/description"
-        app:layout_constraintTop_toTopOf="parent" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="CELLULAR MAPPER PRO"
+                android:textColor="@color/primary_neon"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/text_result"
-        style="@style/TextAppearance.AppCompat.Display1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/doub_grid_size"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/edit_text_factorial"
-        tools:text="42"
-        tools:visibility="visible" />
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status: INIT"
+                android:textColor="@color/primary_neon"
+                android:textSize="12sp" />
+        </LinearLayout>
 
-    <Button
-        android:id="@+id/button_compute"
-        style="@style/Widget.AppCompat.Button.Colored"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/doub_grid_size"
-        android:text="@string/compute"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_result" />
+        <!-- Status Panel (مختصر) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/surface_dark"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:id="@+id/tvStatusBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Android: OK  GPS: OK  Stream: OK  DB: OK"
+                android:textColor="@color/muted"
+                android:textSize="11sp" />
+        </LinearLayout>
 
-    <Button
-        android:id="@+id/button_appcompose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/compose_version"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <!-- Telemetry Grid -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/surface_dark"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:text="📡 LIVE TELEMETRY"
+                android:textColor="@color/primary_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/muted"
+                android:layout_marginVertical="6dp" />
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2">
+                <TextView android:id="@+id/tvMcc" android:text="MCC: --" android:textColor="@android:color/white" android:textSize="14sp" />
+                <TextView android:id="@+id/tvMnc" android:text="MNC: --" android:textColor="@android:color/white" android:textSize="14sp" />
+                <TextView android:id="@+id/tvLac" android:text="LAC: --" android:textColor="@android:color/white" android:textSize="14sp" />
+                <TextView android:id="@+id/tvCid" android:text="CID: --" android:textColor="@android:color/white" android:textSize="14sp" />
+                <TextView android:id="@+id/tvDbm" android:text="dBm: --" android:textColor="@color/warning" android:textSize="14sp" />
+                <TextView android:id="@+id/tvRadio" android:text="Radio: --" android:textColor="@color/primary_cyan" android:textSize="14sp" />
+                <TextView android:id="@+id/tvSpeed" android:text="Speed: --" android:textColor="@color/primary_neon" android:textSize="14sp" />
+                <TextView android:id="@+id/tvHeading" android:text="Heading: --" android:textColor="@color/primary_cyan" android:textSize="14sp" />
+                <TextView android:id="@+id/tvDistance" android:text="Distance: --" android:textColor="@android:color/white" android:textSize="14sp" />
+            </GridLayout>
+        </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Statistics -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/surface_dark"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:text="📊 STATISTICS"
+                android:textColor="@color/primary_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/muted"
+                android:layout_marginVertical="6dp" />
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="3">
+                <TextView android:id="@+id/tvEvents" android:text="Events: 0" android:textColor="@color/primary_neon" android:textSize="11sp" />
+                <TextView android:id="@+id/tvUnique" android:text="Unique: 0" android:textColor="@color/primary_cyan" android:textSize="11sp" />
+                <TextView android:id="@+id/tvChanges" android:text="Changes: 0" android:textColor="@android:color/white" android:textSize="11sp" />
+                <TextView android:id="@+id/tvAvgSignal" android:text="Avg: --" android:textColor="@android:color/white" android:textSize="11sp" />
+                <TextView android:id="@+id/tvBestSignal" android:text="Best: --" android:textColor="@color/primary_neon" android:textSize="11sp" />
+                <TextView android:id="@+id/tvWorstSignal" android:text="Worst: --" android:textColor="@color/danger" android:textSize="11sp" />
+                <TextView android:id="@+id/tvHandovers" android:text="Handovers: 0" android:textColor="@color/primary_cyan" android:textSize="11sp" />
+                <TextView android:id="@+id/tvPingPong" android:text="PingPong: 0" android:textColor="@color/warning" android:textSize="11sp" />
+            </GridLayout>
+        </LinearLayout>
+
+        <!-- Signal Graph -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:background="@color/surface_dark"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+            <com.example.cellularmapper.MainActivity.SignalGraphView
+                android:id="@+id/signalGraph"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+
+        <!-- Map -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:background="@color/surface_dark"
+            android:padding="4dp"
+            android:layout_marginBottom="8dp">
+            <org.osmdroid.views.MapView
+                android:id="@+id/mapView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+
+        <!-- History -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/surface_dark"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:text="📋 HISTORY (last 100)"
+                android:textColor="@color/primary_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/historyRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="120dp" />
+        </LinearLayout>
+
+        <!-- Console -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/surface_dark"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:text="💻 CONSOLE"
+                android:textColor="@color/primary_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/logRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="100dp" />
+        </LinearLayout>
+
+        <!-- Buttons Grid -->
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:rowCount="4"
+            android:useDefaultMargins="true">
+            <Button android:id="@+id/btnScan" android:text="SCAN" android:backgroundTint="@color/primary_neon" android:textColor="@android:color/black" />
+            <Button android:id="@+id/btnStop" android:text="STOP" android:backgroundTint="@color/danger" android:textColor="@android:color/white" />
+            <Button android:id="@+id/btnFetch" android:text="FETCH" android:backgroundTint="@color/primary_cyan" android:textColor="@android:color/black" />
+            <Button android:id="@+id/btnClear" android:text="CLEAR" android:backgroundTint="@color/muted" android:textColor="@android:color/white" />
+            <Button android:id="@+id/btnExportCSV" android:text="CSV" android:backgroundTint="@color/primary_cyan" android:textColor="@android:color/black" />
+            <Button android:id="@+id/btnExportKML" android:text="KML" android:backgroundTint="@color/warning" android:textColor="@android:color/black" />
+            <Button android:id="@+id/btnImport" android:text="IMPORT" android:backgroundTint="@color/warning" android:textColor="@android:color/black" />
+            <Button android:id="@+id/btnProjects" android:text="PROJECTS" android:backgroundTint="@color/primary_neon" android:textColor="@android:color/black" />
+        </GridLayout>
+
+    </LinearLayout>
+</ScrollView>
