@@ -1,12 +1,10 @@
 // ================================================================
-// FILE: build.gradle.kts (جذر المشروع)
+// FILE: build.gradle.kts (جذر المشروع) - بدون تعريف الإصدارات
 // ================================================================
 
-plugins {
-    id("com.android.application") version "8.5.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
-    id("kotlin-kapt") version "1.9.0" apply false
-}
+// هذا الملف فارغ أو بسيط جداً، لأن الإصدارات تعرف في settings.gradle.kts
+// يمكنك حذف هذا الملف كلياً إذا لم يكن فيه أي محتوى،
+// لكن نتركه فارغاً لأغراض التوافق.
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
