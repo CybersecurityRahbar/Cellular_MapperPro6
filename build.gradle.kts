@@ -1,14 +1,11 @@
-// Top-level build file
-plugins {
-    // not needed for root
-}
+// ================================================================
+// FILE: build.gradle.kts (جذر المشروع)
+// ================================================================
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") } // لـ MPAndroidChart
-    }
+plugins {
+    id("com.android.application") version "8.5.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
+    id("kotlin-kapt") version "1.9.0" apply false
 }
 
 tasks.register("clean", Delete::class) {
