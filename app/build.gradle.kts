@@ -1,7 +1,3 @@
-// ================================================================
-// FILE: app/build.gradle.kts
-// ================================================================
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -18,8 +14,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -37,12 +31,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
-    buildFeatures {
-        viewBinding = true
+    // ✅ تم حذف kotlinOptions نهائياً واستبدالها بـ kotlin.compilerOptions
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+        }
     }
 }
 
