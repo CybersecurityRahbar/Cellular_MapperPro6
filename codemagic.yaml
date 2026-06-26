@@ -1,17 +1,18 @@
+# ================================================================
+# FILE: codemagic.yaml (جذر المشروع)
+# ================================================================
+
 workflows:
   android-workflow:
     name: Android Build
     max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
-      groups:
-        - keystore_credentials   # اختياري، للتوقيع
       vars:
         PACKAGE_NAME: "com.example.cellularmapper"
     scripts:
       - name: Build Android APK
         script: |
-          # لا نستخدم cd android لأن المشروع جذر يحتوي على مجلد app مباشرة
           ./gradlew assembleRelease
     artifacts:
       - app/build/outputs/apk/**/*.apk
