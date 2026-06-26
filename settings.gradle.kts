@@ -1,3 +1,7 @@
+// ================================================================
+// FILE: settings.gradle.kts (جذر المشروع)
+// ================================================================
+
 pluginManagement {
     repositories {
         google()
@@ -10,7 +14,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") }
     }
 }
 
