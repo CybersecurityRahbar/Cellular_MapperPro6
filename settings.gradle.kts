@@ -1,8 +1,8 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
@@ -10,16 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
-rootProject.name = ("kotlin-android-template")
-
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
-include(
-    "app",
-    "library-android",
-    "library-compose",
-    "library-kotlin"
-)
+rootProject.name = "CellularMapperPro"
+include(":app")
