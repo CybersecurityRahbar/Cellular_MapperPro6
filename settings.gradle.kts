@@ -1,7 +1,3 @@
-// ================================================================
-// FILE: settings.gradle.kts (جذر المشروع)
-// ================================================================
-
 pluginManagement {
     repositories {
         google()
@@ -10,8 +6,8 @@ pluginManagement {
     }
     plugins {
         id("com.android.application") version "8.5.0"
-        id("org.jetbrains.kotlin.android") version "1.9.0"
-        id("kotlin-kapt") version "1.9.0"
+        id("org.jetbrains.kotlin.android") version "2.0.0"
+        id("kotlin-kapt") version "2.0.0"
     }
 }
 
