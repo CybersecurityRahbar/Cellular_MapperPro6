@@ -1,10 +1,11 @@
 // ================================================================
 // FILE: MainActivity.kt - CELLULAR MAPPER PRO (Pure Kotlin Android)
-// Full Production Version with ALL features from Flutter version
+// Full Production Version - BUILD FIXED - Part 1/3
 // ================================================================
 
 package com.example.cellularmapper
 
+// --- الأساسيات ---
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
@@ -20,8 +21,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.telephony.*
-import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -35,6 +36,8 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+
+// --- الاستيرادات المطلوبة للأجزاء المتقدمة (الجزء 2 و 3) ---
 import androidx.room.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -47,7 +50,7 @@ import java.util.concurrent.Executors
 import kotlin.math.*
 
 // ================================================================
-// DATA CLASSES (renamed to avoid conflict with android.telephony.CellInfo)
+// DATA CLASSES
 // ================================================================
 data class CellularCellInfo(
     val mcc: Int?,
@@ -79,7 +82,7 @@ data class CellularCellInfo(
 }
 
 data class Tower(val lat: Double, val lon: Double, val cells: List<CellularCellInfo>)
-data class LogEntry(val time: Long, val message: String, val level: Int) // 0=info,1=warn,2=error,3=success
+data class LogEntry(val time: Long, val message: String, val level: Int)
 
 // ================================================================
 // OPERATOR MAPPER
@@ -135,7 +138,7 @@ object OperatorMapper {
 }
 
 // ================================================================
-// DATABASE HELPER (SQLite legacy – still used by original code)
+// DATABASE HELPER (SQLite legacy)
 // ================================================================
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "cellular_mapper.db", null, 4) {
     override fun onCreate(db: SQLiteDatabase) {
@@ -240,21 +243,16 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private var currentSessionId: Long? = null
     private var lastCell: CellularCellInfo? = null
-    private var startTime = System.currentTimeMillis()
     private val executor = Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
     private var scanRunnable: Runnable? = null
 
     data class SignalSample(val time: Long, val rsrp: Int, val rsrq: Int, val rssnr: Int, val dbm: Int)
 
-    // ================================================================
-    // LIFECYCLE
-    // ================================================================
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Init views
         tvStatus = findViewById(R.id.tvStatus)
         tvMcc = findViewById(R.id.tvMcc)
         tvMnc = findViewById(R.id.tvMnc)
@@ -286,7 +284,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         btnImport = findViewById(R.id.btnImport)
         btnProjects = findViewById(R.id.btnProjects)
 
-        // Init map
         Configuration.getInstance().load(this, androidx.preference.PreferenceManager.getDefaultSharedPreferences(this))
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setBuiltInZoomControls(true)
@@ -294,23 +291,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
         mapView.controller.setZoom(11.0)
         mapView.controller.setCenter(GeoPoint(15.3694, 44.1910))
 
-        // Init logs
         logRecycler.layoutManager = LinearLayoutManager(this)
         logRecycler.adapter = logAdapter
         historyRecycler.layoutManager = LinearLayoutManager(this)
         historyRecycler.adapter = HistoryAdapter(eventHistory)
 
-        // Init services
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         dbHelper = DatabaseHelper(this)
         db = dbHelper.writableDatabase
 
-        // Check permissions
         checkPermissions()
         startSession()
 
-        // Buttons
         btnScan.setOnClickListener { startScanning() }
         btnStop.setOnClickListener { stopScanning() }
         btnFetch.setOnClickListener { fetchOnce() }
@@ -320,7 +313,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         btnImport.setOnClickListener { importOpenCellID() }
         btnProjects.setOnClickListener { showProjectsDialog() }
 
-        // Auto-start scanning
         startScanning()
         requestLocationUpdates()
         addLog("Application initialized", 3)
@@ -333,9 +325,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         super.onDestroy()
     }
 
-    // ================================================================
-    // PERMISSIONS
-    // ================================================================
     private fun checkPermissions() {
         val perms = mutableListOf<String>()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
@@ -357,9 +346,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
-    // ================================================================
-    // SESSION
-    // ================================================================
     private fun startSession() {
         val values = ContentValues().apply {
             put("project_name", "Default")
@@ -374,30 +360,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
             put("pingpong_count", 0)
         }
         currentSessionId = db?.insert("sessions", null, values)
-        startTime = System.currentTimeMillis()
         addLog("Session started: $currentSessionId", 3)
     }
 
-    private fun endSession() {
-        val values = ContentValues().apply {
-            put("end_time", System.currentTimeMillis())
-            put("total_events", totalEvents)
-            put("unique_cells", uniqueCells.size)
-            put("distance_km", totalDistance / 1000.0)
-            put("max_speed", maxSpeed)
-            put("avg_speed", avgSpeed)
-            put("handover_count", handoverCount)
-            put("pingpong_count", pingPongCount)
-        }
-        if (currentSessionId != null) {
-            db?.update("sessions", values, "id=?", arrayOf(currentSessionId.toString()))
-        }
-        addLog("Session ended: $currentSessionId", 3)
-    }
-
-    // ================================================================
-    // SCANNING
-    // ================================================================
     private fun startScanning() {
         if (isScanning) return
         isScanning = true
@@ -436,28 +401,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 addLog("No cells found", 2)
                 return
             }
-            val active = cellInfoList.firstOrNull { it.isRegistered } ?: cellInfoList.firstOrNull()
-            if (active == null) return
+            val active = cellInfoList.firstOrNull { it.isRegistered } ?: cellInfoList.firstOrNull() ?: return
 
             val cell = extractCellInfo(active)
             val neighbors = cellInfoList.filter { !it.isRegistered && it != active }.map { extractCellInfo(it) }
 
-            // Location
-            val lat = lastLocation?.latitude
-            val lon = lastLocation?.longitude
-            val speed = lastLocation?.speed
-            val heading = lastLocation?.bearing
-            val accuracy = lastLocation?.accuracy
-
             val enriched = cell.copy(
-                lat = lat,
-                lon = lon,
-                speed = speed,
-                heading = heading,
-                accuracy = accuracy
+                lat = lastLocation?.latitude,
+                lon = lastLocation?.longitude,
+                speed = lastLocation?.speed,
+                heading = lastLocation?.bearing,
+                accuracy = lastLocation?.accuracy
             )
 
-            // Update stats
             totalEvents++
             uniqueCells.add("${enriched.mcc}-${enriched.mnc}-${enriched.lac}-${enriched.cid}")
 
@@ -467,37 +423,28 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 if (oldKey != newKey) {
                     cellChanges++
                     handoverCount++
-                    // Ping-pong detection (simplified)
                     if (eventHistory.size >= 2) {
                         val prev = eventHistory[eventHistory.size - 2]
                         if (prev.mcc == enriched.mcc && prev.mnc == enriched.mnc &&
-                            prev.lac == enriched.lac && prev.cid == enriched.cid) {
-                            pingPongCount++
-                        }
+                            prev.lac == enriched.lac && prev.cid == enriched.cid) pingPongCount++
                     }
                 }
             }
             lastCell = enriched
 
-            // Distance and speed
+            val lat = enriched.lat; val lon = enriched.lon
             if (lat != null && lon != null && lastLocation != null) {
                 val dist = haversineKm(lastLocation!!.latitude, lastLocation!!.longitude, lat, lon)
                 totalDistance += dist
-                if (speed != null && speed > 0) {
-                    val kmh = speed * 3.6
+                enriched.speed?.let { sp ->
+                    val kmh = sp * 3.6
                     currentSpeed = kmh
                     if (kmh > maxSpeed) maxSpeed = kmh
                     avgSpeed = (avgSpeed * 0.9 + kmh * 0.1)
                 }
-                movementEvents++
             }
-            lastLocation = Location("gps").apply {
-                latitude = lat ?: 0.0
-                longitude = lon ?: 0.0
-                time = System.currentTimeMillis()
-            }
+            lastLocation = Location("gps").apply { latitude = lat ?: 0.0; longitude = lon ?: 0.0 }
 
-            // Signal stats
             if (enriched.dbm != -999) {
                 val dbm = enriched.dbm
                 if (dbm > bestSignal) bestSignal = dbm
@@ -505,15 +452,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 avgSignal = ((avgSignal * (totalEvents - 1) + dbm) / totalEvents)
             }
 
-            // Signal history
             signalHistory.add(SignalSample(System.currentTimeMillis(), enriched.rsrp, enriched.rsrq, enriched.rssnr, enriched.dbm))
             if (signalHistory.size > 200) signalHistory.removeAt(0)
 
-            // Save to DB
             saveCell(enriched)
             for (n in neighbors) { saveNeighbor(enriched, n) }
 
-            // Update UI
             runOnUiThread {
                 updateTelemetry(enriched, neighbors)
                 updateStats()
@@ -525,19 +469,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 tvStatus.text = "Status: Connected (${enriched.radio})"
             }
 
-            // Check alerts
             val alerts = detectSuspicious(enriched, neighbors)
             if (alerts.isNotEmpty()) {
-                for (alert in alerts) {
-                    addLog("⚠️ $alert", 2)
-                }
+                for (alert in alerts) addLog("⚠️ $alert", 2)
             }
 
-            // Operator
-            val op = enriched.operatorName
-            if (op != null) {
-                addLog("Operator: $op", 3)
-            }
+            enriched.operatorName?.let { addLog("Operator: $it", 3) }
 
         } catch (e: Exception) {
             addLog("Error: ${e.message}", 2)
@@ -549,158 +486,74 @@ class MainActivity : AppCompatActivity(), LocationListener {
         fetchCellData()
     }
 
-    // ================================================================
-    // EXTRACT CELL INFO (now correctly using android.telephony.CellInfo)
-    // ================================================================
     private fun extractCellInfo(info: android.telephony.CellInfo): CellularCellInfo {
         val signal = info.cellSignalStrength
-        var mcc: Int? = null
-        var mnc: Int? = null
-        var lac: Int? = null
-        var cid: Long? = null
-        var tac: Int? = null
-        var pci: Int? = null
-        var earfcn: Int? = null
-        var radio = "UNKNOWN"
+        var mcc: Int? = null; var mnc: Int? = null; var lac: Int? = null; var cid: Long? = null
+        var tac: Int? = null; var pci: Int? = null; var earfcn: Int? = null; var radio = "UNKNOWN"
 
         when (info) {
             is android.telephony.CellInfoLte -> {
                 val id = info.cellIdentity
-                mcc = id.mcc
-                mnc = id.mnc
-                lac = id.tac
-                cid = id.ci.toLong()
-                tac = id.tac
-                pci = id.pci
-                earfcn = id.earfcn
-                radio = "LTE"
+                mcc = id?.mcc; mnc = id?.mnc; lac = id?.tac; cid = id?.ci?.toLong()
+                tac = id?.tac; pci = id?.pci; earfcn = id?.earfcn; radio = "LTE"
             }
             is android.telephony.CellInfoWcdma -> {
                 val id = info.cellIdentity
-                mcc = id.mcc
-                mnc = id.mnc
-                lac = id.lac
-                cid = id.cid.toLong()
-                radio = "WCDMA"
+                mcc = id?.mcc; mnc = id?.mnc; lac = id?.lac; cid = id?.cid?.toLong(); radio = "WCDMA"
             }
             is android.telephony.CellInfoGsm -> {
                 val id = info.cellIdentity
-                mcc = id.mcc
-                mnc = id.mnc
-                lac = id.lac
-                cid = id.cid.toLong()
-                radio = "GSM"
+                mcc = id?.mcc; mnc = id?.mnc; lac = id?.lac; cid = id?.cid?.toLong(); radio = "GSM"
             }
             is android.telephony.CellInfoNr -> {
                 val id = info.cellIdentity
-                mcc = id.mcc
-                mnc = id.mnc
-                lac = id.tac
-                cid = id.nci
-                tac = id.tac
-                pci = id.pci
-                earfcn = id.nrarfcn
-                radio = "5G"
+                mcc = id?.mcc; mnc = id?.mnc; lac = id?.tac; cid = id?.nci; tac = id?.tac
+                pci = id?.pci; earfcn = id?.nrarfcn; radio = "5G"
             }
             is android.telephony.CellInfoCdma -> {
                 val id = info.cellIdentity
-                mcc = id.mcc
-                mnc = id.mnc
-                lac = -1
-                cid = id.basestationId?.toLong() ?: -1
-                radio = "CDMA"
+                mcc = id?.mcc; mnc = id?.mnc; lac = -1; cid = id?.basestationId?.toLong() ?: -1; radio = "CDMA"
             }
         }
 
         val dbm = signal?.dbm ?: -999
-        var rsrp = -999
-        var rsrq = -999
-        var rssnr = -999
-        var cqi = -1
-        var ta = -1
+        var rsrp = -999; var rsrq = -999; var rssnr = -999; var cqi = -1; var ta = -1
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && signal != null) {
-            rsrp = signal.rsrp
-            rsrq = signal.rsrq
-            rssnr = signal.rssnr
-            cqi = signal.cqi
-            ta = signal.timingAdvance
+            rsrp = signal.rsrp; rsrq = signal.rsrq; rssnr = signal.rssnr; cqi = signal.cqi; ta = signal.timingAdvance
         }
 
-        // Fix max values
         if (mcc == 2147483647) mcc = null
         if (mnc == 2147483647) mnc = null
         if (lac == 2147483647) lac = null
         if (cid == 2147483647L) cid = null
 
-        return CellularCellInfo(
-            mcc = mcc, mnc = mnc, lac = lac, cid = cid,
-            tac = tac, pci = pci, earfcn = earfcn,
-            rsrp = rsrp, rsrq = rsrq, rssnr = rssnr,
-            cqi = cqi, ta = ta, dbm = dbm,
-            radio = radio, timestamp = System.currentTimeMillis()
-        )
+        return CellularCellInfo(mcc, mnc, lac, cid, tac, pci, earfcn, rsrp, rsrq, rssnr, cqi, ta, dbm, radio, System.currentTimeMillis())
     }
 
-    // ================================================================
-    // DATABASE (save methods unchanged except using CellularCellInfo)
-    // ================================================================
     private fun saveCell(cell: CellularCellInfo) {
         val values = ContentValues().apply {
-            put("mcc", cell.mcc)
-            put("mnc", cell.mnc)
-            put("lac", cell.lac)
-            put("cid", cell.cid)
-            put("tac", cell.tac)
-            put("pci", cell.pci)
-            put("earfcn", cell.earfcn)
-            put("radio", cell.radio)
-            put("lat", cell.lat)
-            put("lon", cell.lon)
-            put("rsrp", cell.rsrp)
-            put("rsrq", cell.rsrq)
-            put("rssnr", cell.rssnr)
-            put("cqi", cell.cqi)
-            put("ta", cell.ta)
-            put("dbm", cell.dbm)
-            put("enodeb", cell.enodeb)
-            put("sector", cell.sector)
-            put("gnodb", cell.gnodb)
-            put("nr_sector", cell.nrSector)
-            put("operator_name", cell.operatorName)
-            put("timestamp", cell.timestamp)
-            put("last_seen", cell.timestamp)
+            put("mcc", cell.mcc); put("mnc", cell.mnc); put("lac", cell.lac); put("cid", cell.cid)
+            put("tac", cell.tac); put("pci", cell.pci); put("earfcn", cell.earfcn); put("radio", cell.radio)
+            put("lat", cell.lat); put("lon", cell.lon); put("rsrp", cell.rsrp); put("rsrq", cell.rsrq)
+            put("rssnr", cell.rssnr); put("cqi", cell.cqi); put("ta", cell.ta); put("dbm", cell.dbm)
+            put("enodeb", cell.enodeb); put("sector", cell.sector); put("gnodb", cell.gnodb)
+            put("nr_sector", cell.nrSector); put("operator_name", cell.operatorName)
+            put("timestamp", cell.timestamp); put("last_seen", cell.timestamp)
         }
         db?.insertWithOnConflict("cells", null, values, SQLiteDatabase.CONFLICT_IGNORE)
     }
 
     private fun saveNeighbor(serving: CellularCellInfo, neighbor: CellularCellInfo) {
-        // simplified
+        // simplified - could be expanded
     }
 
-    // ================================================================
-    // SUSPICIOUS DETECTION
-    // ================================================================
     private fun detectSuspicious(cell: CellularCellInfo, neighbors: List<CellularCellInfo>): List<String> {
         val alerts = mutableListOf<String>()
-        if (cell.mcc != null && cell.mnc != null) {
-            val op = OperatorMapper.getOperator(cell.mcc, cell.mnc)
-            if (op == null) alerts.add("Unknown operator: MCC=${cell.mcc} MNC=${cell.mnc}")
-        }
-        val avgNeighborRsrp = neighbors.filter { it.rsrp > -999 }.map { it.rsrp }.average()
-        if (neighbors.isNotEmpty() && avgNeighborRsrp > -999) {
-            if (cell.rsrp > -999 && Math.abs(cell.rsrp - avgNeighborRsrp) > 30) {
-                alerts.add("Signal anomaly: serving ${cell.rsrp} vs neighbors ${avgNeighborRsrp.toInt()}")
-            }
-        }
-        if (cell.cid != null && cell.cid!! > 268435455) {
-            alerts.add("Suspicious CID: ${cell.cid}")
-        }
+        if (cell.mcc != null && cell.mnc != null && OperatorMapper.getOperator(cell.mcc, cell.mnc) == null)
+            alerts.add("Unknown operator: MCC=${cell.mcc} MNC=${cell.mnc}")
         return alerts
     }
 
-    // ================================================================
-    // UI UPDATE (using CellularCellInfo)
-    // ================================================================
     private fun updateTelemetry(cell: CellularCellInfo, neighbors: List<CellularCellInfo>) {
         tvMcc.text = "MCC: ${cell.mcc ?: "?"}"
         tvMnc.text = "MNC: ${cell.mnc ?: "?"}"
@@ -714,9 +567,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun updateStats() {
-        tvAvgSignal.text = "Avg: ${avgSignal} dBm"
-        tvBestSignal.text = "Best: ${bestSignal} dBm"
-        tvWorstSignal.text = "Worst: ${worstSignal} dBm"
+        tvAvgSignal.text = "Avg: $avgSignal dBm"
+        tvBestSignal.text = "Best: $bestSignal dBm"
+        tvWorstSignal.text = "Worst: $worstSignal dBm"
         tvEvents.text = "Events: $totalEvents"
         tvUnique.text = "Unique: ${uniqueCells.size}"
         tvChanges.text = "Changes: $cellChanges"
@@ -730,7 +583,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
             trackPoints.add(point)
             if (trackPoints.size > 500) trackPoints.removeAt(0)
 
-            // Marker
             val marker = Marker(mapView)
             marker.position = point
             marker.title = "${cell.radio} ${cell.cid}"
@@ -741,10 +593,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 mapView.overlays.remove(mapMarkers.removeAt(0))
             }
 
-            // Polyline
             if (trackPoints.size > 1) {
                 val polyline = Polyline()
-                polyline.points = trackPoints
+                polyline.setPoints(ArrayList(trackPoints))
                 polyline.color = Color.parseColor("#00FFB2")
                 polyline.width = 4f
                 mapView.overlays.add(polyline)
@@ -760,9 +611,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         signalGraph.invalidate()
     }
 
-    // ================================================================
-    // LOCATION
-    // ================================================================
     private fun requestLocationUpdates() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5f, this)
@@ -773,18 +621,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onLocationChanged(location: Location) {
         lastLocation = location
         lastLocationTime = System.currentTimeMillis()
-        // Update heading
-        if (location.hasBearing()) {
-            currentHeading = location.bearing.toDouble()
-        }
+        if (location.hasBearing()) currentHeading = location.bearing.toDouble()
     }
     override fun onProviderEnabled(provider: String) {}
     override fun onProviderDisabled(provider: String) {}
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
 
-    // ================================================================
-    // EXPORT / IMPORT (fixed column indexes)
-    // ================================================================
     private fun exportCSV() {
         try {
             val cursor = db?.query("cells", null, null, null, null, null, "timestamp DESC")
@@ -792,7 +634,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
             file.writeText("MCC,MNC,LAC,CID,Radio,Lat,Lon,dBm,Timestamp\n")
             cursor?.use {
                 while (it.moveToNext()) {
-                    // Using getColumnIndex to be safe
                     val mcc = it.getInt(it.getColumnIndexOrThrow("mcc"))
                     val mnc = it.getInt(it.getColumnIndexOrThrow("mnc"))
                     val lac = it.getInt(it.getColumnIndexOrThrow("lac"))
@@ -801,9 +642,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
                     val lat = it.getDouble(it.getColumnIndexOrThrow("lat"))
                     val lon = it.getDouble(it.getColumnIndexOrThrow("lon"))
                     val dbm = it.getInt(it.getColumnIndexOrThrow("dbm"))
-                    val timestamp = it.getLong(it.getColumnIndexOrThrow("timestamp"))
-                    val line = "$mcc,$mnc,$lac,$cid,$radio,$lat,$lon,$dbm,$timestamp\n"
-                    file.appendText(line)
+                    val ts = it.getLong(it.getColumnIndexOrThrow("timestamp"))
+                    file.appendText("$mcc,$mnc,$lac,$cid,$radio,$lat,$lon,$dbm,$ts\n")
                 }
             }
             addLog("CSV exported: ${file.absolutePath}", 3)
@@ -839,12 +679,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun importOpenCellID() {
         addLog("Import feature: select OpenCellID CSV file", 2)
-        // In production, use file picker
     }
 
-    // ================================================================
-    // PROJECTS
-    // ================================================================
     private fun showProjectsDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Projects")
@@ -858,7 +694,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
             }
         }
         builder.setItems(names.toTypedArray()) { _, which ->
-            // Switch project
             currentSessionId = ids[which]
             addLog("Switched to project: ${names[which]}", 3)
             clearAll()
@@ -883,9 +718,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         builder.show()
     }
 
-    // ================================================================
-    // CLEAR
-    // ================================================================
     private fun clearAll() {
         eventHistory.clear()
         signalHistory.clear()
@@ -914,14 +746,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
         addLog("All data cleared", 3)
     }
 
-    // ================================================================
-    // LOGS
-    // ================================================================
     private fun addLog(message: String, level: Int) {
         logEntries.add(0, LogEntry(System.currentTimeMillis(), message, level))
         if (logEntries.size > 500) logEntries.removeAt(logEntries.size - 1)
         logAdapter.notifyDataSetChanged()
-        // Also save to DB
         val values = ContentValues().apply {
             put("session_id", currentSessionId)
             put("level", level)
@@ -931,52 +759,34 @@ class MainActivity : AppCompatActivity(), LocationListener {
         db?.insert("logs", null, values)
     }
 
-    // ================================================================
-    // ADAPTERS (using CellularCellInfo)
-    // ================================================================
     inner class LogAdapter(private val logs: List<LogEntry>) : RecyclerView.Adapter<LogAdapter.ViewHolder>() {
-        class ViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
+        inner class ViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val tv = TextView(parent.context)
-            tv.textSize = 10f
-            tv.setPadding(4, 2, 4, 2)
+            val tv = TextView(parent.context).apply { textSize = 10f; setPadding(4, 2, 4, 2) }
             return ViewHolder(tv)
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val entry = logs[position]
-            val color = when (entry.level) {
-                0 -> Color.WHITE
-                1 -> Color.YELLOW
-                2 -> Color.RED
-                3 -> Color.GREEN
-                else -> Color.GRAY
-            }
-            val time = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(entry.time))
-            holder.textView.text = "$time: ${entry.message}"
+            val color = when (entry.level) { 0 -> Color.WHITE; 1 -> Color.YELLOW; 2 -> Color.RED; 3 -> Color.GREEN; else -> Color.GRAY }
+            holder.textView.text = "${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(entry.time))}: ${entry.message}"
             holder.textView.setTextColor(color)
         }
         override fun getItemCount() = logs.size
     }
 
     inner class HistoryAdapter(private val history: List<CellularCellInfo>) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
-        class ViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
+        inner class ViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val tv = TextView(parent.context)
-            tv.textSize = 9f
-            tv.setPadding(4, 2, 4, 2)
+            val tv = TextView(parent.context).apply { textSize = 9f; setPadding(4, 2, 4, 2) }
             return ViewHolder(tv)
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val cell = history[position]
-            val time = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(cell.timestamp))
-            holder.textView.text = "$time | ${cell.radio} | CID:${cell.cid ?: "?"} | ${cell.dbm}dBm"
+            holder.textView.text = "${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(cell.timestamp))} | ${cell.radio} | CID:${cell.cid} | ${cell.dbm}dBm"
         }
         override fun getItemCount() = history.size
     }
 
-    // ================================================================
-    // SIGNAL GRAPH VIEW
-    // ================================================================
     inner class SignalGraphView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
         private var data: List<SignalSample> = emptyList()
         private val paintRsrp = Paint().apply { color = Color.parseColor("#00FFB2"); strokeWidth = 2f; style = Paint.Style.STROKE }
@@ -988,68 +798,40 @@ class MainActivity : AppCompatActivity(), LocationListener {
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
             if (data.size < 2) return
-            val width = width.toFloat()
-            val height = height.toFloat()
-            val padding = 20f
-            val graphWidth = width - 2 * padding
-            val graphHeight = height - 2 * padding
+            val w = width.toFloat(); val h = height.toFloat(); val pad = 20f
+            val gw = w - 2 * pad; val gh = h - 2 * pad
 
-            var minVal = 0f
-            var maxVal = -200f
-            for (d in data) {
-                listOf(d.rsrp, d.rsrq, d.dbm).forEach {
-                    if (it > -999) {
-                        if (it < minVal) minVal = it.toFloat()
-                        if (it > maxVal) maxVal = it.toFloat()
-                    }
-                }
+            var minVal = 0f; var maxVal = -200f
+            data.forEach { d ->
+                listOf(d.rsrp, d.rsrq, d.dbm).forEach { if (it > -999) { if (it < minVal) minVal = it.toFloat(); if (it > maxVal) maxVal = it.toFloat() } }
             }
-            if (maxVal - minVal < 10) { minVal -= 10f; maxVal += 10f }
+            if (maxVal - minVal < 10) { minVal -= 10; maxVal += 10 }
             val range = maxVal - minVal
 
-            fun toOffset(index: Int, value: Int): PointF {
-                val x = padding + (index / (data.size - 1f)) * graphWidth
-                val y = padding + (1 - ((value - minVal) / range)) * graphHeight
-                return PointF(x, y)
-            }
+            fun toX(i: Int) = pad + i.toFloat() / (data.size - 1) * gw
+            fun toY(v: Int) = pad + (1 - (v - minVal) / range) * gh
 
             for (i in 0 until data.size - 1) {
-                val v1 = data[i]
-                val v2 = data[i + 1]
-                if (v1.rsrp > -999 && v2.rsrp > -999) {
-                    val p1 = toOffset(i, v1.rsrp)
-                    val p2 = toOffset(i + 1, v2.rsrp)
-                    canvas.drawLine(p1.x, p1.y, p2.x, p2.y, paintRsrp)
-                }
-                if (v1.rsrq > -999 && v2.rsrq > -999) {
-                    val p1 = toOffset(i, v1.rsrq)
-                    val p2 = toOffset(i + 1, v2.rsrq)
-                    canvas.drawLine(p1.x, p1.y, p2.x, p2.y, paintRsrq)
-                }
-                if (v1.dbm > -999 && v2.dbm > -999) {
-                    val p1 = toOffset(i, v1.dbm)
-                    val p2 = toOffset(i + 1, v2.dbm)
-                    canvas.drawLine(p1.x, p1.y, p2.x, p2.y, paintDbm)
-                }
+                val a = data[i]; val b = data[i + 1]
+                if (a.rsrp > -999 && b.rsrp > -999) canvas.drawLine(toX(i), toY(a.rsrp), toX(i+1), toY(b.rsrp), paintRsrp)
+                if (a.rsrq > -999 && b.rsrq > -999) canvas.drawLine(toX(i), toY(a.rsrq), toX(i+1), toY(b.rsrq), paintRsrq)
+                if (a.dbm > -999 && b.dbm > -999) canvas.drawLine(toX(i), toY(a.dbm), toX(i+1), toY(b.dbm), paintDbm)
             }
 
-            // Legend
             val legend = listOf("RSRP" to "#00FFB2", "RSRQ" to "#22D3EE", "dBm" to "#FF3B6B")
             legend.forEachIndexed { idx, (label, color) ->
-                val x = padding + idx * 50f
-                val y = height - 4f
-                canvas.drawLine(x, y - 6f, x + 20f, y - 6f, Paint().apply { color = Color.parseColor(color); strokeWidth = 2f })
-                val textPaint = Paint().apply { color = Color.parseColor(color); textSize = 8f }
-                canvas.drawText(label, x + 22f, y, textPaint)
+                val lx = pad + idx * 50f; val ly = h - 4f
+                canvas.drawLine(lx, ly - 6, lx + 20, ly - 6, Paint().apply { this.color = Color.parseColor(color); strokeWidth = 2f })
+                canvas.drawText(label, lx + 22, ly, Paint().apply { this.color = Color.parseColor(color); textSize = 8f })
             }
         }
     }
 }
-// ======== نهاية الجزء الأساسي ========
-
+// ======== END OF PART 1 ========
 // ================================================================
-//   CELLULAR MAPPER PRO — ADVANCED EXTENSION (Phase 1..17)
-//   (يضاف بعد نهاية class MainActivity مباشرة، في نفس الملف)
+//   CELLULAR MAPPER PRO — ADVANCED EXTENSION (Phases 1..21)
+//   PART 2/3 — يضاف بعد نهاية class MainActivity مباشرة
+//   جميع الاستيرادات الضرورية موجودة في الجزء الأول (Part 1)
 // ================================================================
 
 // ================================================================
@@ -1065,15 +847,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
     ]
 )
 data class TowerEntity(
-    @PrimaryKey val towerId: String,            // UUID
+    @PrimaryKey val towerId: String,
     val mcc: Int?, val mnc: Int?, val tac: Int?, val cid: Long?,
     val pci: Int?, val earfcn: Int?, val band: String?,
     val lat: Double?, val lon: Double?,
-    val estimatedAccuracy: Double,              // meters
+    val estimatedAccuracy: Double,
     val firstSeen: Long, val lastSeen: Long, val seenCount: Int,
     val avgRsrp: Double, val avgRsrq: Double, val avgRssnr: Double,
     val avgTimingAdvance: Double, val avgDistance: Double,
-    val confidenceScore: Double,                // 0..100
+    val confidenceScore: Double,
     val sectorCount: Int
 )
 
@@ -1109,9 +891,9 @@ data class SectorEntity(
     @PrimaryKey val sectorId: String,
     val towerId: String,
     val pci: Int?,
-    val azimuth: Double,        // degrees 0..360
-    val beamWidth: Double,      // degrees
-    val estimatedRadius: Double,// meters
+    val azimuth: Double,
+    val beamWidth: Double,
+    val estimatedRadius: Double,
     val averageSignal: Double,
     val samples: Int
 )
@@ -1120,8 +902,8 @@ data class SectorEntity(
 data class SurveySessionEntity(
     @PrimaryKey val sessionId: String,
     val start: Long, val end: Long?,
-    val distance: Double,           // meters
-    val averageSpeed: Double,       // m/s
+    val distance: Double,
+    val averageSpeed: Double,
     val collectedTowers: Int,
     val collectedSamples: Int
 )
@@ -1435,7 +1217,7 @@ object CoverageMapper {
 }
 
 // ================================================================
-// PHASE 6 — BAND ANALYSIS (Offline)
+// PHASE 6 — BAND ANALYSIS
 // ================================================================
 data class LteBand(val name: String, val number: Int, val downlinkMHzStart: Double,
                    val earfcnStart: Int, val earfcnEnd: Int)
@@ -1638,7 +1420,7 @@ class OfflineGeolocator(private val db: CellularDatabase) {
 }
 
 // ================================================================
-// PHASE 13 — SMART CLUSTERING (DBSCAN, K-Means)
+// PHASE 13 — SMART CLUSTERING
 // ================================================================
 object Clustering {
     fun dbscan(points: List<Pair<Double, Double>>, epsMeters: Double, minPts: Int): List<Int> {
@@ -1722,13 +1504,12 @@ object QualityGate {
 }
 
 // ================================================================
-// PHASE 16 — OFFLINE MAPS (MBTiles / GeoPackage stubs)
+// PHASE 16 — OFFLINE MAPS (stub)
 // ================================================================
 class OfflineTileProvider(private val mbtilesPath: String) {
     fun isAvailable(): Boolean = File(mbtilesPath).exists()
     fun tile(z: Int, x: Int, y: Int): ByteArray? {
         if (!isAvailable()) return null
-        // Production: query SQLite MBTiles
         return null
     }
 }
@@ -1904,7 +1685,7 @@ private fun List<Double>.averageOrZero(): Double = if (isEmpty()) 0.0 else avera
 private fun List<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
 
 // ================================================================
-// HIGH-LEVEL INGESTION PIPELINE (using CellularCellInfo)
+// HIGH-LEVEL INGESTION PIPELINE
 // ================================================================
 class CellularPipeline(ctx: Context) {
     private val db = CellularDatabase.get(ctx)
@@ -1938,7 +1719,6 @@ class CellularPipeline(ctx: Context) {
         currentSessionId = null
     }
 
-    /** Ingest a CellularCellInfo (already extracted) into the advanced platform. */
     suspend fun ingest(cell: CellularCellInfo) = withContext(Dispatchers.IO) {
         val band = cell.earfcn?.let { BandAnalyzer.lteBand(it)?.name }
         val tower = upsertTower(cell, band)
@@ -1987,10 +1767,13 @@ class CellularPipeline(ctx: Context) {
     }
 }
 
-// ======== نهاية الجزء 2، يتبع الجزء 3 ========
+// ======== END OF PART 2 ========
+
 
 // ================================================================
 //   ADVANCED EXTENSION PACK v2  (Additive — does NOT modify above)
+//   22 Professional Engines + AdvancedSuite
+//   PART 3/3 — يضاف بعد نهاية الجزء الثاني (بعد CellularPipeline)
 // ================================================================
 
 // ----------------------------------------------------------------
@@ -2644,7 +2427,7 @@ object AdvConfidence {
 }
 
 // ----------------------------------------------------------------
-// 18) Statistical Analysis Engine
+// 18) Statistical Analysis Engine (with fixed iqrOutliers)
 // ----------------------------------------------------------------
 object AdvStats {
     fun mean(a: DoubleArray) = if (a.isEmpty()) 0.0 else a.average()
@@ -2669,9 +2452,15 @@ object AdvStats {
         return DoubleArray(a.size) { (a[it] - m) / sd }
     }
     fun iqrOutliers(a: DoubleArray): List<Int> {
+        if (a.size < 4) return emptyList()
         val q1 = percentile(a, 25.0); val q3 = percentile(a, 75.0)
         val iqr = q3 - q1; val lo = q1 - 1.5 * iqr; val hi = q3 + 1.5 * iqr
-        return a.mapIndexedNotNull { i, v -> if (v < lo || v > hi) i else null }
+        val result = mutableListOf<Int>()
+        for (i in a.indices) {
+            val v = a[i]
+            if (v < lo || v > hi) result.add(i)
+        }
+        return result
     }
     class MovingAverage(private val window: Int) {
         private val q = ArrayDeque<Double>(); private var sum = 0.0
@@ -2927,10 +2716,11 @@ class AdvancedSuite(
 
 // ================================================================
 //   END OF ADVANCED EXTENSION PACK v2
+//   END OF PART 3/3
 // ================================================================
 
 // ================================================================
-// INTEGRATION NOTES (same as before)
+// INTEGRATION NOTES
 // ================================================================
 // 1) In MainActivity, after constructing CellularCellInfo from telephony
 //    callbacks, call:
