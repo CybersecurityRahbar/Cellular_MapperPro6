@@ -487,48 +487,102 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun extractCellInfo(info: android.telephony.CellInfo): CellularCellInfo {
-        val signal = info.cellSignalStrength
-        var mcc: Int? = null; var mnc: Int? = null; var lac: Int? = null; var cid: Long? = null
-        var tac: Int? = null; var pci: Int? = null; var earfcn: Int? = null; var radio = "UNKNOWN"
+    val signal = info.cellSignalStrength
+    var mcc: Int? = null
+    var mnc: Int? = null
+    var lac: Int? = null
+    var cid: Long? = null
+    var tac: Int? = null
+    var pci: Int? = null
+    var earfcn: Int? = null
+    var radio = "UNKNOWN"
 
-        when (info) {
-            is android.telephony.CellInfoLte -> {
-                val id = info.cellIdentity
-                mcc = id?.mcc; mnc = id?.mnc; lac = id?.tac; cid = id?.ci?.toLong()
-                tac = id?.tac; pci = id?.pci; earfcn = id?.earfcn; radio = "LTE"
+    when (info) {
+        is android.telephony.CellInfoLte -> {
+            val id = info.cellIdentity as? android.telephony.CellIdentityLte
+            if (id != null) {
+                mcc = id.mcc
+                mnc = id.mnc
+                lac = id.tac
+                cid = id.ci?.toLong()
+                tac = id.tac
+                pci = id.pci
+                earfcn = id.earfcn
             }
-            is android.telephony.CellInfoWcdma -> {
-                val id = info.cellIdentity
-                mcc = id?.mcc; mnc = id?.mnc; lac = id?.lac; cid = id?.cid?.toLong(); radio = "WCDMA"
-            }
-            is android.telephony.CellInfoGsm -> {
-                val id = info.cellIdentity
-                mcc = id?.mcc; mnc = id?.mnc; lac = id?.lac; cid = id?.cid?.toLong(); radio = "GSM"
-            }
-            is android.telephony.CellInfoNr -> {
-                val id = info.cellIdentity
-                mcc = id?.mcc; mnc = id?.mnc; lac = id?.tac; cid = id?.nci; tac = id?.tac
-                pci = id?.pci; earfcn = id?.nrarfcn; radio = "5G"
-            }
-            is android.telephony.CellInfoCdma -> {
-                val id = info.cellIdentity
-                mcc = id?.mcc; mnc = id?.mnc; lac = -1; cid = id?.basestationId?.toLong() ?: -1; radio = "CDMA"
-            }
+            radio = "LTE"
         }
-
-        val dbm = signal?.dbm ?: -999
-        var rsrp = -999; var rsrq = -999; var rssnr = -999; var cqi = -1; var ta = -1
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && signal != null) {
-            rsrp = signal.rsrp; rsrq = signal.rsrq; rssnr = signal.rssnr; cqi = signal.cqi; ta = signal.timingAdvance
+        is android.telephony.CellInfoWcdma -> {
+            val id = info.cellIdentity as? android.telephony.CellIdentityWcdma
+            if (id != null) {
+                mcc = id.mcc
+                mnc = id.mnc
+                lac = id.lac
+                cid = id.cid?.toLong()
+            }
+            radio = "WCDMA"
         }
-
-        if (mcc == 2147483647) mcc = null
-        if (mnc == 2147483647) mnc = null
-        if (lac == 2147483647) lac = null
-        if (cid == 2147483647L) cid = null
-
-        return CellularCellInfo(mcc, mnc, lac, cid, tac, pci, earfcn, rsrp, rsrq, rssnr, cqi, ta, dbm, radio, System.currentTimeMillis())
+        is android.telephony.CellInfoGsm -> {
+            val id = info.cellIdentity as? android.telephony.CellIdentityGsm
+            if (id != null) {
+                mcc = id.mcc
+                mnc = id.mnc
+                lac = id.lac
+                cid = id.cid?.toLong()
+            }
+            radio = "GSM"
+        }
+        is android.telephony.CellInfoNr -> {
+            val id = info.cellIdentity as? android.telephony.CellIdentityNr
+            if (id != null) {
+                mcc = id.mcc
+                mnc = id.mnc
+                lac = id.tac
+                cid = id.nci
+                tac = id.tac
+                pci = id.pci
+                earfcn = id.nrarfcn
+            }
+            radio = "5G"
+        }
+        is android.telephony.CellInfoCdma -> {
+            val id = info.cellIdentity as? android.telephony.CellIdentityCdma
+            if (id != null) {
+                mcc = id.mcc
+                mnc = id.mnc
+                lac = -1
+                cid = id.basestationId?.toLong() ?: -1
+            }
+            radio = "CDMA"
+        }
     }
+
+    val dbm = signal?.dbm ?: -999
+    var rsrp = -999
+    var rsrq = -999
+    var rssnr = -999
+    var cqi = -1
+    var ta = -1
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && signal != null) {
+        rsrp = signal.rsrp
+        rsrq = signal.rsrq
+        rssnr = signal.rssnr
+        cqi = signal.cqi
+        ta = signal.timingAdvance
+    }
+
+    if (mcc == 2147483647) mcc = null
+    if (mnc == 2147483647) mnc = null
+    if (lac == 2147483647) lac = null
+    if (cid == 2147483647L) cid = null
+
+    return CellularCellInfo(
+        mcc = mcc, mnc = mnc, lac = lac, cid = cid,
+        tac = tac, pci = pci, earfcn = earfcn,
+        rsrp = rsrp, rsrq = rsrq, rssnr = rssnr,
+        cqi = cqi, ta = ta, dbm = dbm,
+        radio = radio, timestamp = System.currentTimeMillis()
+    )
+}
 
     private fun saveCell(cell: CellularCellInfo) {
         val values = ContentValues().apply {
