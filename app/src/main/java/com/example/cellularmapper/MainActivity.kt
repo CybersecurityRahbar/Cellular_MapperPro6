@@ -40,6 +40,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
 
+import androidx.room.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import java.io.FileWriter
+import java.util.UUID
+import java.util.PriorityQueue
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.*
+
 // ================================================================
 // DATA CLASSES
 // ================================================================
@@ -1067,16 +1076,16 @@ class MainActivity : AppCompatActivity(), LocationListener {
 //   implementation "org.osmdroid:osmdroid-android:6.1.18"
 // ================================================================
 
-package com.example.cellularmapper
+//package com.example.cellularmapper
 
-import android.content.Context
-import androidx.room.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import java.io.File
-import java.io.FileWriter
-import java.util.UUID
-import kotlin.math.*
+//import android.content.Context
+//import androidx.room.*
+//import kotlinx.coroutines.*
+//import kotlinx.coroutines.flow.*
+//import java.io.File
+//import java.io.FileWriter
+//import java.util.UUID
+//import kotlin.math.*
 
 // ================================================================
 // PHASE 1 — PROFESSIONAL DATABASE (Room)
@@ -2098,13 +2107,13 @@ class CellularPipeline(ctx: Context) {
 //
 // ================================================================
 
-package com.cellular.mapper.pro
+//package com.cellular.mapper.pro
 
-import kotlin.math.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import java.util.PriorityQueue
-import java.util.concurrent.ConcurrentHashMap
+//import kotlin.math.*
+//import kotlinx.coroutines.*
+//import kotlinx.coroutines.flow.*
+//import java.util.PriorityQueue
+//import java.util.concurrent.ConcurrentHashMap
 
 // ----------------------------------------------------------------
 // 0) Shared data containers used by the advanced engines
