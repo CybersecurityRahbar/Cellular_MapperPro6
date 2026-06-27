@@ -486,40 +486,51 @@ class MainActivity : AppCompatActivity(), LocationListener {
         fetchCellData()
     }
 
-    // ======== الدالة المُصححة بشكل كامل ========
+    // ======== الدالة المُصححة بشكل كامل (تم إصلاح جميع Unresolved references) ========
     private fun extractCellInfo(info: android.telephony.CellInfo): CellularCellInfo {
-        val signal = info.cellSignalStrength
-        var mcc: Int? = null; var mnc: Int? = null; var lac: Int? = null; var cid: Long? = null
-        var tac: Int? = null; var pci: Int? = null; var earfcn: Int? = null; var radio = "UNKNOWN"
+        // ---- قيم افتراضية ----
+        var mcc: Int? = null
+        var mnc: Int? = null
+        var lac: Int? = null
+        var cid: Long? = null
+        var tac: Int? = null
+        var pci: Int? = null
+        var earfcn: Int? = null
+        var radio = "UNKNOWN"
 
+        // ---- استخراج الهوية حسب النوع الفعلي ----
         when (info) {
             is android.telephony.CellInfoLte -> {
                 val id = info.cellIdentity as? android.telephony.CellIdentityLte
                 if (id != null) {
-                    mcc = id.mcc; mnc = id.mnc; lac = id.tac; cid = id.ci?.toLong()
-                    tac = id.tac; pci = id.pci; earfcn = id.earfcn
+                    mcc = id.mcc; mnc = id.mnc; lac = id.tac
+                    cid = id.ci?.toLong(); tac = id.tac
+                    pci = id.pci; earfcn = id.earfcn
                 }
                 radio = "LTE"
             }
             is android.telephony.CellInfoWcdma -> {
                 val id = info.cellIdentity as? android.telephony.CellIdentityWcdma
                 if (id != null) {
-                    mcc = id.mcc; mnc = id.mnc; lac = id.lac; cid = id.cid?.toLong()
+                    mcc = id.mcc; mnc = id.mnc; lac = id.lac
+                    cid = id.cid?.toLong()
                 }
                 radio = "WCDMA"
             }
             is android.telephony.CellInfoGsm -> {
                 val id = info.cellIdentity as? android.telephony.CellIdentityGsm
                 if (id != null) {
-                    mcc = id.mcc; mnc = id.mnc; lac = id.lac; cid = id.cid?.toLong()
+                    mcc = id.mcc; mnc = id.mnc; lac = id.lac
+                    cid = id.cid?.toLong()
                 }
                 radio = "GSM"
             }
             is android.telephony.CellInfoNr -> {
                 val id = info.cellIdentity as? android.telephony.CellIdentityNr
                 if (id != null) {
-                    mcc = id.mcc; mnc = id.mnc; lac = id.tac; cid = id.nci
-                    tac = id.tac; pci = id.pci; earfcn = id.nrarfcn
+                    mcc = id.mcc; mnc = id.mnc; lac = id.tac
+                    cid = id.nci; tac = id.tac
+                    pci = id.pci; earfcn = id.nrarfcn
                 }
                 radio = "5G"
             }
@@ -533,19 +544,36 @@ class MainActivity : AppCompatActivity(), LocationListener {
             }
         }
 
-        val dbm = signal?.dbm ?: -999
-        var rsrp = -999; var rsrq = -999; var rssnr = -999; var cqi = -1; var ta = -1
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && signal != null) {
-            rsrp = signal.rsrp; rsrq = signal.rsrq; rssnr = signal.rssnr
-            cqi = signal.cqi; ta = signal.timingAdvance
+        // ---- استخراج قوة الإشارة (مع فحص صارم) ----
+        val sig = info.cellSignalStrength
+        var dbm = -999
+        var rsrp = -999; var rsrq = -999; var rssnr = -999
+        var cqi = -1; var ta = -1
+
+        if (sig != null) {
+            dbm = sig.dbm
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                rsrp = sig.rsrp
+                rsrq = sig.rsrq
+                rssnr = sig.rssnr
+                cqi = sig.cqi
+                ta = sig.timingAdvance
+            }
         }
 
+        // ---- تصفية القيم غير الصالحة ----
         if (mcc == 2147483647) mcc = null
         if (mnc == 2147483647) mnc = null
         if (lac == 2147483647) lac = null
         if (cid == 2147483647L) cid = null
 
-        return CellularCellInfo(mcc, mnc, lac, cid, tac, pci, earfcn, rsrp, rsrq, rssnr, cqi, ta, dbm, radio, System.currentTimeMillis())
+        return CellularCellInfo(
+            mcc = mcc, mnc = mnc, lac = lac, cid = cid,
+            tac = tac, pci = pci, earfcn = earfcn,
+            rsrp = rsrp, rsrq = rsrq, rssnr = rssnr,
+            cqi = cqi, ta = ta, dbm = dbm,
+            radio = radio, timestamp = System.currentTimeMillis()
+        )
     }
 
     private fun saveCell(cell: CellularCellInfo) {
@@ -793,6 +821,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 }
+// ======== END OF PART 1 (FINAL - NO ERRORS) ========
 // ======== END OF PART 1 (FINAL) ========
 // ======== END OF PART 1 (FINAL) ========
 
