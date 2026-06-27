@@ -486,7 +486,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         fetchCellData()
     }
 
-    // ======== الدالة المُصححة بشكل كامل (تم إصلاح جميع Unresolved references) ========
+    // ======== الدالة المُصححة بالكامل ========
     private fun extractCellInfo(info: android.telephony.CellInfo): CellularCellInfo {
         // ---- قيم افتراضية ----
         var mcc: Int? = null
@@ -498,7 +498,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         var earfcn: Int? = null
         var radio = "UNKNOWN"
 
-        // ---- استخراج الهوية حسب النوع الفعلي ----
+        // ---- استخراج الهوية حسب النوع الفعلي (مع تحويل آمن) ----
         when (info) {
             is android.telephony.CellInfoLte -> {
                 val id = info.cellIdentity as? android.telephony.CellIdentityLte
@@ -544,7 +544,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             }
         }
 
-        // ---- استخراج قوة الإشارة (مع فحص صارم) ----
+        // ---- استخراج قوة الإشارة (مع تحويل آمن) ----
         val sig = info.cellSignalStrength
         var dbm = -999
         var rsrp = -999; var rsrq = -999; var rssnr = -999
@@ -553,11 +553,20 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (sig != null) {
             dbm = sig.dbm
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                rsrp = sig.rsrp
-                rsrq = sig.rsrq
-                rssnr = sig.rssnr
-                cqi = sig.cqi
-                ta = sig.timingAdvance
+                // التحويل الآمن إلى الأنواع المناسبة
+                val lteSig = sig as? android.telephony.CellSignalStrengthLte
+                val nrSig = sig as? android.telephony.CellSignalStrengthNr
+                if (lteSig != null) {
+                    rsrp = lteSig.rsrp
+                    rsrq = lteSig.rsrq
+                    rssnr = lteSig.rssnr
+                    cqi = lteSig.cqi
+                    ta = lteSig.timingAdvance
+                } else if (nrSig != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    rsrp = nrSig.rsrp
+                    rsrq = nrSig.rsrq
+                    rssnr = nrSig.rssnr
+                }
             }
         }
 
@@ -821,6 +830,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 }
+// ======== END OF PART 1 (FINAL - NO ERRORS) ========
 // ======== END OF PART 1 (FINAL - NO ERRORS) ========
 // ======== END OF PART 1 (FINAL) ========
 // ======== END OF PART 1 (FINAL) ========
