@@ -1,11 +1,11 @@
 // ================================================================
 // FILE: MainActivity.kt - CELLULAR MAPPER PRO (Pure Kotlin Android)
-// Full Production Version - BUILD FIXED - Part 1/3
+// FINAL BUILD-FIXED VERSION
 // ================================================================
 
 package com.example.cellularmapper
 
-// --- الأساسيات ---
+// الأساسيات
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.telephony.*
+import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -36,8 +37,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
-
-// --- الاستيرادات المطلوبة للأجزاء المتقدمة (الجزء 2 و 3) ---
+// المتقدمة (لاحقاً في الملف لكن الاستيرادات مطلوبة من البداية)
 import androidx.room.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -543,9 +543,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         db?.insertWithOnConflict("cells", null, values, SQLiteDatabase.CONFLICT_IGNORE)
     }
 
-    private fun saveNeighbor(serving: CellularCellInfo, neighbor: CellularCellInfo) {
-        // simplified - could be expanded
-    }
+    private fun saveNeighbor(serving: CellularCellInfo, neighbor: CellularCellInfo) {}
 
     private fun detectSuspicious(cell: CellularCellInfo, neighbors: List<CellularCellInfo>): List<String> {
         val alerts = mutableListOf<String>()
@@ -555,26 +553,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun updateTelemetry(cell: CellularCellInfo, neighbors: List<CellularCellInfo>) {
-        tvMcc.text = "MCC: ${cell.mcc ?: "?"}"
-        tvMnc.text = "MNC: ${cell.mnc ?: "?"}"
-        tvLac.text = "LAC: ${cell.lac ?: "?"}"
-        tvCid.text = "CID: ${cell.cid ?: "?"}"
+        tvMcc.text = "MCC: ${cell.mcc ?: "?"}"; tvMnc.text = "MNC: ${cell.mnc ?: "?"}"
+        tvLac.text = "LAC: ${cell.lac ?: "?"}"; tvCid.text = "CID: ${cell.cid ?: "?"}"
         tvDbm.text = "dBm: ${if (cell.dbm != -999) cell.dbm else "?"}"
-        tvRadio.text = "Radio: ${cell.radio}"
-        tvSpeed.text = "Speed: ${"%.1f".format(currentSpeed)} km/h"
+        tvRadio.text = "Radio: ${cell.radio}"; tvSpeed.text = "Speed: ${"%.1f".format(currentSpeed)} km/h"
         tvHeading.text = "Heading: ${"%.0f".format(currentHeading)}°"
         tvDistance.text = "Distance: ${"%.2f".format(totalDistance)} km"
     }
 
     private fun updateStats() {
-        tvAvgSignal.text = "Avg: $avgSignal dBm"
-        tvBestSignal.text = "Best: $bestSignal dBm"
-        tvWorstSignal.text = "Worst: $worstSignal dBm"
-        tvEvents.text = "Events: $totalEvents"
-        tvUnique.text = "Unique: ${uniqueCells.size}"
-        tvChanges.text = "Changes: $cellChanges"
-        tvHandovers.text = "Handovers: $handoverCount"
-        tvPingPong.text = "PingPong: $pingPongCount"
+        tvAvgSignal.text = "Avg: $avgSignal dBm"; tvBestSignal.text = "Best: $bestSignal dBm"
+        tvWorstSignal.text = "Worst: $worstSignal dBm"; tvEvents.text = "Events: $totalEvents"
+        tvUnique.text = "Unique: ${uniqueCells.size}"; tvChanges.text = "Changes: $cellChanges"
+        tvHandovers.text = "Handovers: $handoverCount"; tvPingPong.text = "PingPong: $pingPongCount"
     }
 
     private fun updateMap(cell: CellularCellInfo) {
@@ -582,17 +573,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val point = GeoPoint(cell.lat!!, cell.lon!!)
             trackPoints.add(point)
             if (trackPoints.size > 500) trackPoints.removeAt(0)
-
-            val marker = Marker(mapView)
-            marker.position = point
-            marker.title = "${cell.radio} ${cell.cid}"
-            marker.snippet = "${cell.dbm} dBm"
+            val marker = Marker(mapView).apply { position = point; title = "${cell.radio} ${cell.cid}" }
             mapView.overlays.add(marker)
             mapMarkers.add(marker)
-            if (mapMarkers.size > 500) {
-                mapView.overlays.remove(mapMarkers.removeAt(0))
-            }
-
+            if (mapMarkers.size > 500) mapView.overlays.remove(mapMarkers.removeAt(0))
             if (trackPoints.size > 1) {
                 val polyline = Polyline()
                 polyline.setPoints(ArrayList(trackPoints))
@@ -600,16 +584,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 polyline.width = 4f
                 mapView.overlays.add(polyline)
             }
-
             mapView.controller.animateTo(point)
             mapView.invalidate()
         }
     }
 
-    private fun updateSignalGraph() {
-        signalGraph.setData(signalHistory)
-        signalGraph.invalidate()
-    }
+    private fun updateSignalGraph() { signalGraph.setData(signalHistory); signalGraph.invalidate() }
 
     private fun requestLocationUpdates() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -619,8 +599,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     override fun onLocationChanged(location: Location) {
-        lastLocation = location
-        lastLocationTime = System.currentTimeMillis()
+        lastLocation = location; lastLocationTime = System.currentTimeMillis()
         if (location.hasBearing()) currentHeading = location.bearing.toDouble()
     }
     override fun onProviderEnabled(provider: String) {}
@@ -648,9 +627,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             }
             addLog("CSV exported: ${file.absolutePath}", 3)
             Toast.makeText(this, "CSV exported", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            addLog("CSV export failed: ${e.message}", 2)
-        }
+        } catch (e: Exception) { addLog("CSV export failed: ${e.message}", 2) }
     }
 
     private fun exportKML() {
@@ -661,10 +638,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             sb.appendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?><kml xmlns=\"http://www.opengis.net/kml/2.2\"><Document>")
             cursor?.use {
                 while (it.moveToNext()) {
-                    val lat = it.getDouble(0)
-                    val lon = it.getDouble(1)
-                    val radio = it.getString(2)
-                    val cid = it.getLong(3)
+                    val lat = it.getDouble(0); val lon = it.getDouble(1); val radio = it.getString(2); val cid = it.getLong(3)
                     sb.appendLine("<Placemark><name>$radio $cid</name><Point><coordinates>$lon,$lat,0</coordinates></Point></Placemark>")
                 }
             }
@@ -672,14 +646,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
             file.writeText(sb.toString())
             addLog("KML exported: ${file.absolutePath}", 3)
             Toast.makeText(this, "KML exported", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            addLog("KML export failed: ${e.message}", 2)
-        }
+        } catch (e: Exception) { addLog("KML export failed: ${e.message}", 2) }
     }
 
-    private fun importOpenCellID() {
-        addLog("Import feature: select OpenCellID CSV file", 2)
-    }
+    private fun importOpenCellID() { addLog("Import feature: select OpenCellID CSV file", 2) }
 
     private fun showProjectsDialog() {
         val builder = AlertDialog.Builder(this)
@@ -706,10 +676,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 .setView(input)
                 .setPositiveButton("Create") { _, _ ->
                     val name = input.text.toString()
-                    if (name.isNotEmpty()) {
-                        startSession()
-                        addLog("Project created: $name", 3)
-                    }
+                    if (name.isNotEmpty()) { startSession(); addLog("Project created: $name", 3) }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
@@ -719,31 +686,14 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun clearAll() {
-        eventHistory.clear()
-        signalHistory.clear()
-        trackPoints.clear()
-        mapView.overlays.clear()
+        eventHistory.clear(); signalHistory.clear(); trackPoints.clear(); mapView.overlays.clear()
         uniqueCells.clear()
-        totalEvents = 0
-        cellChanges = 0
-        movementEvents = 0
-        avgSignal = 0
-        bestSignal = -999
-        worstSignal = 0
-        currentSpeed = 0.0
-        avgSpeed = 0.0
-        maxSpeed = 0.0
-        currentHeading = 0.0
-        totalDistance = 0.0
-        handoverCount = 0
-        pingPongCount = 0
-        lastCell = null
-        lastLocation = null
-        updateStats()
-        updateSignalGraph()
-        historyRecycler.adapter?.notifyDataSetChanged()
-        mapView.invalidate()
-        addLog("All data cleared", 3)
+        totalEvents = 0; cellChanges = 0; movementEvents = 0; avgSignal = 0
+        bestSignal = -999; worstSignal = 0; currentSpeed = 0.0; avgSpeed = 0.0; maxSpeed = 0.0
+        currentHeading = 0.0; totalDistance = 0.0; handoverCount = 0; pingPongCount = 0
+        lastCell = null; lastLocation = null
+        updateStats(); updateSignalGraph(); historyRecycler.adapter?.notifyDataSetChanged()
+        mapView.invalidate(); addLog("All data cleared", 3)
     }
 
     private fun addLog(message: String, level: Int) {
@@ -751,9 +701,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (logEntries.size > 500) logEntries.removeAt(logEntries.size - 1)
         logAdapter.notifyDataSetChanged()
         val values = ContentValues().apply {
-            put("session_id", currentSessionId)
-            put("level", level)
-            put("message", message)
+            put("session_id", currentSessionId); put("level", level); put("message", message)
             put("timestamp", System.currentTimeMillis())
         }
         db?.insert("logs", null, values)
@@ -827,7 +775,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 }
-// ======== END OF PART 1 ========
+// ======== END OF PART 1 (FINAL) ========
+
 // ================================================================
 //   CELLULAR MAPPER PRO — ADVANCED EXTENSION (Phases 1..21)
 //   PART 2/3 — يضاف بعد نهاية class MainActivity مباشرة
@@ -1685,7 +1634,7 @@ private fun List<Double>.averageOrZero(): Double = if (isEmpty()) 0.0 else avera
 private fun List<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
 
 // ================================================================
-// HIGH-LEVEL INGESTION PIPELINE
+// HIGH-LEVEL INGESTION PIPELINE (using CellularCellInfo only)
 // ================================================================
 class CellularPipeline(ctx: Context) {
     private val db = CellularDatabase.get(ctx)
@@ -1719,6 +1668,7 @@ class CellularPipeline(ctx: Context) {
         currentSessionId = null
     }
 
+    /** Ingest a CellularCellInfo (already extracted) into the advanced platform. */
     suspend fun ingest(cell: CellularCellInfo) = withContext(Dispatchers.IO) {
         val band = cell.earfcn?.let { BandAnalyzer.lteBand(it)?.name }
         val tower = upsertTower(cell, band)
@@ -1768,7 +1718,6 @@ class CellularPipeline(ctx: Context) {
 }
 
 // ======== END OF PART 2 ========
-
 
 // ================================================================
 //   ADVANCED EXTENSION PACK v2  (Additive — does NOT modify above)
