@@ -833,12 +833,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
 // ======== END OF PART 1 (FINAL - NO ERRORS) ========
 // ======== END OF PART 1 (FINAL - NO ERRORS) ========
 // ======== END OF PART 1 (FINAL) ========
-// ======== END OF PART 1 (FINAL) ========
 
 // ================================================================
 //   CELLULAR MAPPER PRO — ADVANCED EXTENSION (Phases 1..21)
-//   PART 2/3 — يضاف بعد نهاية class MainActivity مباشرة
-//   جميع الاستيرادات الضرورية موجودة في الجزء الأول (Part 1)
+//   PART 2/3 — خالٍ تماماً من أي تعامل مع android.telephony.CellInfo
 // ================================================================
 
 // ================================================================
@@ -1775,12 +1773,12 @@ class CellularPipeline(ctx: Context) {
     }
 }
 
-// ======== END OF PART 2 ========
+// ======== END OF PART 2 (FIXED) ========
 
 // ================================================================
-//   ADVANCED EXTENSION PACK v2  (Additive — does NOT modify above)
+//   ADVANCED EXTENSION PACK v2  (Additive – does NOT modify above)
 //   22 Professional Engines + AdvancedSuite
-//   PART 3/3 — يضاف بعد نهاية الجزء الثاني (بعد CellularPipeline)
+//   PART 3/3 – لا يحتوي على أي android.telephony.*
 // ================================================================
 
 // ----------------------------------------------------------------
@@ -2726,25 +2724,3 @@ class AdvancedSuite(
 //   END OF PART 3/3
 // ================================================================
 
-// ================================================================
-// INTEGRATION NOTES
-// ================================================================
-// 1) In MainActivity, after constructing CellularCellInfo from telephony
-//    callbacks, call:
-//        lifecycleScope.launch { pipeline.ingest(cellInfo) }
-//    where `pipeline` is a single CellularPipeline(this) instance kept
-//    in the activity.
-//
-// 2) Start / stop a session around active drive tests:
-//        pipeline.startSession() ... pipeline.endSession()
-//
-// 3) The original UI is untouched. To add the new Dashboard / Heatmap /
-//    Sector overlays, read snapshots from pipeline.dashboard and draw
-//    them on top of the existing MapView using osmdroid overlays.
-//
-// 4) Exports live in ExportEngine — wire to existing menu items.
-//
-// 5) Everything in this file runs offline. Online tile sources remain
-//    as in the original code; OfflineTileProvider can replace them when
-//    an MBTiles file is provided.
-// ================================================================
